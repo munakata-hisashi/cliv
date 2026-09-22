@@ -1,3 +1,6 @@
+// clivのエントリポイントです。
+// サブコマンドを持たず、MVPの中心価値である「一覧を見る」操作に寄せています。
+
 package main
 
 import (
@@ -20,6 +23,7 @@ func main() {
 	var jsonOut bool
 	var showVersion bool
 
+	// MVPではサブコマンドを持たず、必要な操作だけをflagで受けます。
 	flag.StringVar(&source, "source", "", "filter by source (brew, mise, npm, manual)")
 	flag.BoolVar(&all, "all", false, "include dependency packages when supported")
 	flag.BoolVar(&jsonOut, "json", false, "output JSON")
@@ -39,6 +43,7 @@ func main() {
 		os.Exit(2)
 	}
 
+	// 設定で有効なcollectorだけを動かし、未導入のmanagerは静かに無視します。
 	cfg := config.Load()
 	collectors := enabledCollectors(cfg)
 	var entries []model.CLIEntry
@@ -59,6 +64,7 @@ func main() {
 	if entries == nil {
 		entries = []model.CLIEntry{}
 	}
+	// 出力は常に安定した順序にし、差分確認しやすくします。
 	sortEntries(entries)
 
 	var err error

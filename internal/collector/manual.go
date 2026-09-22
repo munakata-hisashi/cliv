@@ -1,3 +1,6 @@
+// 設定ファイルに書かれた手動登録CLIを集めます。
+// curl | shなど由来を自動判定しづらいものを、MVPでは明示登録で扱います。
+
 package collector
 
 import (

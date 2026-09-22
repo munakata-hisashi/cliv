@@ -1,3 +1,6 @@
+// HomebrewからFormula情報を集めます。
+// デフォルトではbrew leavesを使い、ユーザーが直接入れたものだけを表示します。
+
 package collector
 
 import (

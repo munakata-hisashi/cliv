@@ -1,3 +1,6 @@
+// ~/.config/cliv/config.tomlを読み込む簡易設定ローダーです。
+// 依存を増やさないため、MVPで必要なTOMLの形だけを軽く解釈します。
+
 package config
 
 import (

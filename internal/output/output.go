@@ -1,3 +1,6 @@
+// 収集済みCLI情報を表示形式に変換します。
+// collectorと出力を分け、JSON追加などの変更を局所化します。
+
 package output
 
 import (

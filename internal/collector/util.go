@@ -1,3 +1,6 @@
+// collector間で使う小さな補助関数群です。
+// 外部コマンド実行やPATH確認をここに寄せ、各collectorの処理を読みやすくします。
+
 package collector
 
 import (

@@ -1,3 +1,6 @@
+// npm global packageからbinコマンドを集めます。
+// package名とcommand名が違うため、package.jsonのbinを正として使います。
+
 package collector
 
 import (

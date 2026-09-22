@@ -1,3 +1,6 @@
+// miseが管理しているツールを集めます。
+// MVPでは1ツール1代表コマンドとして扱い、副次的なコマンドは追いません。
+
 package collector
 
 import (
@@ -36,7 +39,7 @@ func parseMise(data []byte) []model.CLIEntry {
 			}
 		}
 	case map[string]any:
-		// Some mise versions return {"node": [{...}], "python": [{...}]}.
+		// miseのバージョンによりJSON形状が違うため、代表的な2形式を受けます。
 		for name, val := range v {
 			switch vv := val.(type) {
 			case []any:
@@ -67,7 +70,7 @@ func miseEntry(m map[string]any) model.CLIEntry {
 	if version == "" {
 		version = stringField(m, "requested_version")
 	}
-	// If version contains source/status suffixes, keep the first token as MVP metadata.
+	// バージョン以外の補足が混ざる場合があるため、先頭トークンだけを採用します。
 	fields := strings.Fields(versionString(version))
 	if len(fields) > 0 {
 		version = fields[0]
