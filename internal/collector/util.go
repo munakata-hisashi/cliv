@@ -1,0 +1,71 @@
+package collector
+
+import (
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+)
+
+func commandExists(name string) bool {
+	_, err := exec.LookPath(name)
+	return err == nil
+}
+
+func commandPath(name string) string {
+	p, err := exec.LookPath(name)
+	if err != nil {
+		return ""
+	}
+	return p
+}
+
+func run(name string, args ...string) ([]byte, error) {
+	cmd := exec.Command(name, args...)
+	return cmd.Output()
+}
+
+func executableFiles(dir string) []string {
+	ents, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+	out := make([]string, 0, len(ents))
+	for _, ent := range ents {
+		if ent.IsDir() {
+			continue
+		}
+		info, err := ent.Info()
+		if err != nil {
+			continue
+		}
+		if info.Mode()&0111 != 0 {
+			out = append(out, ent.Name())
+		}
+	}
+	return out
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return "unknown"
+}
+
+func homeDir() string {
+	h, _ := os.UserHomeDir()
+	return h
+}
+
+func expandHome(path string) string {
+	if path == "~" {
+		return homeDir()
+	}
+	if strings.HasPrefix(path, "~/") {
+		return filepath.Join(homeDir(), path[2:])
+	}
+	return path
+}
