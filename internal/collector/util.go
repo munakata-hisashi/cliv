@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -38,14 +39,16 @@ func executableFiles(dir string) []string {
 		if ent.IsDir() {
 			continue
 		}
-		info, err := ent.Info()
+		// ReadDir entries for symlinks report the link mode, not the target mode.
+		info, err := os.Stat(filepath.Join(dir, ent.Name()))
 		if err != nil {
 			continue
 		}
-		if info.Mode()&0111 != 0 {
+		if info.Mode().IsRegular() && info.Mode()&0111 != 0 {
 			out = append(out, ent.Name())
 		}
 	}
+	sort.Strings(out)
 	return out
 }
 

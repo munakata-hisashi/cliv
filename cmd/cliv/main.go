@@ -42,6 +42,10 @@ func main() {
 		fmt.Fprintln(os.Stderr, "cliv: subcommands are not supported in MVP")
 		os.Exit(2)
 	}
+	if source != "" && source != "brew" && source != "mise" && source != "npm" && source != "manual" {
+		fmt.Fprintf(os.Stderr, "cliv: unknown source %q (brew, mise, npm, manual)\n", source)
+		os.Exit(2)
+	}
 
 	// 設定で有効なcollectorだけを動かし、未導入のmanagerは静かに無視します。
 	cfg := config.Load()

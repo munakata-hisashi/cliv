@@ -4,8 +4,11 @@
 package collector
 
 import (
+	"context"
 	"os/exec"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/munakata-hisashi/cliv/internal/config"
 	"github.com/munakata-hisashi/cliv/internal/model"
@@ -27,10 +30,9 @@ func (m Manual) Collect(all bool) ([]model.CLIEntry, error) {
 		if pkg == "" {
 			pkg = t.Command
 		}
-		source := t.Source
-		if source == "" {
-			source = "manual"
-		}
+		// Configured entries are always manual; they must not masquerade as a
+		// package manager's metadata or bypass --source filtering.
+		source := "manual"
 		version := "unknown"
 		if t.VersionCommand != "" {
 			version = manualVersion(t.VersionCommand)
@@ -41,7 +43,9 @@ func (m Manual) Collect(all bool) ([]model.CLIEntry, error) {
 }
 
 func manualVersion(command string) string {
-	cmd := exec.Command("sh", "-c", command)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "sh", "-c", command)
 	out, err := cmd.Output()
 	if err != nil {
 		return "unknown"
@@ -50,5 +54,10 @@ func manualVersion(command string) string {
 	if v == "" {
 		return "unknown"
 	}
-	return strings.Fields(v)[len(strings.Fields(v))-1]
+	// Version output is not standardized: e.g. "2.1.63 (Claude Code)" or
+	// "claude 1.0.113". Prefer a version-like token over the last word.
+	if version := regexp.MustCompile(`\b[vV]?[0-9]+(?:\.[0-9]+)+(?:[-+._][0-9A-Za-z]+)*\b`).FindString(v); version != "" {
+		return strings.TrimPrefix(strings.TrimPrefix(version, "v"), "V")
+	}
+	return "unknown"
 }

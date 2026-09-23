@@ -5,6 +5,8 @@ package collector
 
 import (
 	"encoding/json"
+	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/munakata-hisashi/cliv/internal/model"
@@ -22,13 +24,13 @@ func (Mise) Collect(all bool) ([]model.CLIEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	return parseMise(out), nil
+	return parseMise(out)
 }
 
-func parseMise(data []byte) []model.CLIEntry {
+func parseMise(data []byte) ([]model.CLIEntry, error) {
 	var raw any
-	if json.Unmarshal(data, &raw) != nil {
-		return nil
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("parse mise ls: %w", err)
 	}
 	var entries []model.CLIEntry
 	switch v := raw.(type) {
@@ -54,6 +56,8 @@ func parseMise(data []byte) []model.CLIEntry {
 				entries = append(entries, miseEntry(vv))
 			}
 		}
+	default:
+		return nil, fmt.Errorf("parse mise ls: unexpected JSON shape")
 	}
 	out := entries[:0]
 	for _, e := range entries {
@@ -61,11 +65,24 @@ func parseMise(data []byte) []model.CLIEntry {
 			out = append(out, e)
 		}
 	}
-	return out
+	return out, nil
 }
 
 func miseEntry(m map[string]any) model.CLIEntry {
+	if installed, ok := m["installed"].(bool); ok && !installed {
+		return model.CLIEntry{}
+	}
 	name := stringField(m, "name", "tool", "plugin", "short")
+	command := name
+	if strings.Contains(name, ":") {
+		// Backend-qualified tool IDs are package IDs, not shell commands.
+		// Use the installed bin directory to pick one representative command.
+		bins := executableFiles(filepath.Join(stringField(m, "install_path"), "bin"))
+		if len(bins) == 0 {
+			return model.CLIEntry{}
+		}
+		command = bins[0]
+	}
 	version := stringField(m, "version", "installed_version")
 	if version == "" {
 		version = stringField(m, "requested_version")
@@ -78,7 +95,7 @@ func miseEntry(m map[string]any) model.CLIEntry {
 	if version == "" {
 		version = "unknown"
 	}
-	return model.CLIEntry{Command: name, Package: name, Version: version, Source: "mise", Path: commandPath(name), Direct: true}
+	return model.CLIEntry{Command: command, Package: name, Version: version, Source: "mise", Path: commandPath(command), Direct: true}
 }
 
 func versionString(s string) string {
