@@ -23,6 +23,12 @@ go run ./cmd/cliv
 go install ./cmd/cliv
 ```
 
+Prebuilt binaries for Linux, macOS and Windows (amd64/arm64) are available from
+[GitHub Releases](https://github.com/munakata-hisashi/cliv/releases). Download the
+archive for your OS/architecture, verify it against `checksums.txt`, and place
+`cliv` (or `cliv.exe`) on your PATH. Release binaries report their tag version
+with `cliv --version`; local source builds report `dev`.
+
 ## Options
 
 ```sh
@@ -56,3 +62,22 @@ version_command = "claude --version"
 ```
 
 `cliv` is read-only and does not install, update, remove, or repair tools.
+
+## CI and releases
+
+GitHub Actions runs tests, vet and build checks on pushes to `main` and pull
+requests (Linux and macOS). To publish a release, create and push a version tag
+on a tested commit:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow checks the tag format (`vMAJOR.MINOR.PATCH`), runs tests
+and vet again, builds cross-platform archives with the tag version embedded,
+and publishes them with `checksums.txt` to GitHub Releases. It requires GitHub
+Actions to have permission to create releases via `GITHUB_TOKEN` (repository
+Settings → Actions → General → Workflow permissions; the workflow requests
+`contents: write` for publishing). User-specific configuration in
+`~/.config/cliv/config.toml` is not part of a release.

@@ -15,7 +15,8 @@ import (
 	"github.com/munakata-hisashi/cliv/internal/output"
 )
 
-const version = "0.1.0"
+// Overridden with -ldflags for tagged release builds.
+var version = "dev"
 
 func main() {
 	var source string
