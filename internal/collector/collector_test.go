@@ -19,7 +19,21 @@ func TestBrewDirectAndAll(t *testing.T) {
 	if err := os.Symlink("rg-real", filepath.Join(bin, "rg")); err != nil {
 		t.Fatal(err)
 	}
-	data := []byte(`{"formulae":[{"name":"ripgrep","installed":[{"version":"14.1","installed_on_request":true}]},{"name":"library","installed":[{"version":"1.0","installed_on_request":false}]}]}`)
+	sbin := filepath.Join(prefix, "Cellar", "daemon", "1.0", "sbin")
+	if err := os.MkdirAll(sbin, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sbin, "daemonctl"), []byte("#!/bin/sh\n"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	// The same command in bin and sbin is only listed once.
+	if err := os.MkdirAll(filepath.Join(prefix, "Cellar", "daemon", "1.0", "bin"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(prefix, "Cellar", "daemon", "1.0", "bin", "daemonctl"), []byte("#!/bin/sh\n"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	data := []byte(`{"formulae":[{"name":"ripgrep","installed":[{"version":"14.1","installed_on_request":true}]},{"name":"library","installed":[{"version":"1.0","installed_on_request":false}]},{"name":"daemon","installed":[{"version":"1.0","installed_on_request":false}]}]}`)
 	entries, err := parseBrew(data, prefix, false)
 	if err != nil {
 		t.Fatal(err)
@@ -31,11 +45,29 @@ func TestBrewDirectAndAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != 3 || entries[2].Command != "library" || entries[2].Direct {
-		t.Fatalf("all: %+v", entries)
+	if len(entries) != 3 || entries[2].Command != "daemonctl" || entries[2].Direct {
+		t.Fatalf("all (no phantom library entry): %+v", entries)
 	}
 	if _, err := parseBrew([]byte(`{}`), prefix, true); err == nil {
 		t.Fatal("expected invalid metadata error")
+	}
+}
+
+func TestBrewSbinOnly(t *testing.T) {
+	prefix := t.TempDir()
+	sbin := filepath.Join(prefix, "Cellar", "service", "1.0", "sbin")
+	if err := os.MkdirAll(sbin, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sbin, "servicectl"), []byte("#!/bin/sh\n"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sbin, "notes"), []byte("not executable"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := parseBrew([]byte(`{"formulae":[{"name":"service","installed":[{"version":"1.0","installed_on_request":true}]}]}`), prefix, false)
+	if err != nil || len(entries) != 1 || entries[0].Command != "servicectl" {
+		t.Fatalf("sbin: %+v, %v", entries, err)
 	}
 }
 

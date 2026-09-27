@@ -41,7 +41,7 @@ cliv --help          # help
 
 ## Supported sources
 
-- Homebrew (`brew`): direct formulae by default; `--all` includes dependencies.
+- Homebrew (`brew`): commands found in formula `bin`/`sbin`; direct formulae by default, with `--all` also including dependencies that provide executables.
 - mise (`mise`): installed tools from `mise ls --json`.
 - npm (`npm`): global top-level packages and their `package.json` `bin` commands.
 - manual: optional entries from `~/.config/cliv/config.toml`.

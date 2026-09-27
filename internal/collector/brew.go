@@ -58,17 +58,21 @@ func parseBrew(data []byte, prefix string, all bool) ([]model.CLIEntry, error) {
 			if !all && !direct {
 				continue
 			}
-			// opt points to the currently linked installation. Use the keg's own bin
-			// for each version, including unlinked formulae.
-			commands := executableFiles(filepath.Join(prefix, "Cellar", f.Name, installed.Version, "bin"))
-			if len(commands) == 0 {
-				commands = []string{f.Name}
-			}
-			for _, command := range commands {
-				entries = append(entries, model.CLIEntry{
-					Command: command, Package: f.Name, Version: firstNonEmpty(installed.Version),
-					Source: "brew", Path: commandPath(command), Direct: direct,
-				})
+			// Inspect the keg itself so unlinked formulae are included. Formulae
+			// without an executable in bin or sbin do not provide a CLI entry.
+			keg := filepath.Join(prefix, "Cellar", f.Name, installed.Version)
+			seen := make(map[string]bool)
+			for _, dir := range []string{"bin", "sbin"} {
+				for _, command := range executableFiles(filepath.Join(keg, dir)) {
+					if seen[command] {
+						continue
+					}
+					seen[command] = true
+					entries = append(entries, model.CLIEntry{
+						Command: command, Package: f.Name, Version: firstNonEmpty(installed.Version),
+						Source: "brew", Path: commandPath(command), Direct: direct,
+					})
+				}
 			}
 		}
 	}

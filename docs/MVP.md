@@ -319,15 +319,14 @@ Collectorは読み取り専用処理のみを行う。
 
 デフォルトでは依存packageを除外する。
 
-取得候補:
+取得方法:
 
 ```bash
-brew leaves
-brew list --formula --versions
-brew info --json=v2
+brew info --json=v2 --installed
+brew --prefix
 ```
 
-最初に直接インストールされたFormula集合を取得し、そのPackageが提供するCommandを取得する。
+`installed_on_request` から直接インストールされたFormulaを判定し、そのPackageが提供するCommandを取得する。`--all` では依存Formulaも対象にする。
 
 例:
 
@@ -338,11 +337,7 @@ command: rg
 source: brew
 ```
 
-MVPではCommandの完全な列挙が難しい場合、以下の順で取得する。
-
-1. Homebrew metadata
-2. packageの `bin` directory
-3. package名をfallback
+Commandはインストール済みFormulaの keg 内の `bin` と `sbin` にある実行ファイルから取得する。同名のCommandはそのFormula内で一度だけ表示する。実行ファイルが見つからないFormulaは、CLIを提供しないものとして表示しない（Formula名をCommand名に代用しない）。
 
 ---
 
