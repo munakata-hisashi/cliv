@@ -1,87 +1,36 @@
 package collector
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"testing"
+
+	"github.com/munakata-hisashi/cliv/internal/config"
 )
 
 func TestBrewDirectAndAll(t *testing.T) {
-	prefix := t.TempDir()
-	bin := filepath.Join(prefix, "Cellar", "ripgrep", "14.1", "bin")
-	if err := os.MkdirAll(bin, 0755); err != nil {
-		t.Fatal(err)
+	data := []byte(`{"formulae":[{"name":"cmake","installed":[{"version":"4.2.1","installed_on_request":true}]},{"name":"library","installed":[{"version":"1.0","installed_on_request":false}]}]}`)
+	entries, err := parseBrew(data, false)
+	if err != nil || len(entries) != 1 || entries[0].Tool != "cmake" || entries[0].Version != "4.2.1" || !entries[0].Direct {
+		t.Fatalf("direct: %+v, %v", entries, err)
 	}
-	if err := os.WriteFile(filepath.Join(bin, "rg-real"), []byte("#!/bin/sh\n"), 0755); err != nil {
-		t.Fatal(err)
+	entries, err = parseBrew(data, true)
+	if err != nil || len(entries) != 2 || entries[1].Tool != "library" || entries[1].Direct {
+		t.Fatalf("all: %+v, %v", entries, err)
 	}
-	if err := os.Symlink("rg-real", filepath.Join(bin, "rg")); err != nil {
-		t.Fatal(err)
-	}
-	sbin := filepath.Join(prefix, "Cellar", "daemon", "1.0", "sbin")
-	if err := os.MkdirAll(sbin, 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(sbin, "daemonctl"), []byte("#!/bin/sh\n"), 0755); err != nil {
-		t.Fatal(err)
-	}
-	// The same command in bin and sbin is only listed once.
-	if err := os.MkdirAll(filepath.Join(prefix, "Cellar", "daemon", "1.0", "bin"), 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(prefix, "Cellar", "daemon", "1.0", "bin", "daemonctl"), []byte("#!/bin/sh\n"), 0755); err != nil {
-		t.Fatal(err)
-	}
-	data := []byte(`{"formulae":[{"name":"ripgrep","installed":[{"version":"14.1","installed_on_request":true}]},{"name":"library","installed":[{"version":"1.0","installed_on_request":false}]},{"name":"daemon","installed":[{"version":"1.0","installed_on_request":false}]}]}`)
-	entries, err := parseBrew(data, prefix, false)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(entries) != 2 || entries[0].Command != "rg" || entries[1].Command != "rg-real" || !entries[0].Direct {
-		t.Fatalf("direct: %+v", entries)
-	}
-	entries, err = parseBrew(data, prefix, true)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(entries) != 3 || entries[2].Command != "daemonctl" || entries[2].Direct {
-		t.Fatalf("all (no phantom library entry): %+v", entries)
-	}
-	if _, err := parseBrew([]byte(`{}`), prefix, true); err == nil {
-		t.Fatal("expected invalid metadata error")
-	}
-}
-
-func TestBrewSbinOnly(t *testing.T) {
-	prefix := t.TempDir()
-	sbin := filepath.Join(prefix, "Cellar", "service", "1.0", "sbin")
-	if err := os.MkdirAll(sbin, 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(sbin, "servicectl"), []byte("#!/bin/sh\n"), 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(sbin, "notes"), []byte("not executable"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	entries, err := parseBrew([]byte(`{"formulae":[{"name":"service","installed":[{"version":"1.0","installed_on_request":true}]}]}`), prefix, false)
-	if err != nil || len(entries) != 1 || entries[0].Command != "servicectl" {
-		t.Fatalf("sbin: %+v, %v", entries, err)
+	for _, invalid := range []string{`{}`, `invalid`} {
+		if _, err := parseBrew([]byte(invalid), true); err == nil {
+			t.Fatal("expected invalid metadata error")
+		}
 	}
 }
 
 func TestMiseInstalledOnly(t *testing.T) {
 	entries, err := parseMise([]byte(`{"node":[{"version":"24.8.0","installed":true},{"requested_version":"25","installed":false}],"go":[{"version":"1.24","installed":true}]}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(entries) != 2 {
-		t.Fatalf("entries: %+v", entries)
+	if err != nil || len(entries) != 2 {
+		t.Fatalf("entries: %+v, %v", entries, err)
 	}
 	versions := map[string]string{}
 	for _, e := range entries {
-		versions[e.Command] = e.Version
+		versions[e.Tool] = e.Version
 	}
 	if versions["node"] != "24.8.0" || versions["go"] != "1.24" {
 		t.Fatalf("versions: %+v", versions)
@@ -91,17 +40,26 @@ func TestMiseInstalledOnly(t *testing.T) {
 	}
 }
 
-func TestMiseBackendCommand(t *testing.T) {
-	bin := filepath.Join(t.TempDir(), "bin")
-	if err := os.MkdirAll(bin, 0755); err != nil {
-		t.Fatal(err)
+func TestMiseToolNamesWithoutExecutables(t *testing.T) {
+	for _, name := range []string{"npm:@openai/codex", "npm:@earendil-works/pi-coding-agent", "pipx:httpie", "node"} {
+		t.Run(name, func(t *testing.T) {
+			entry := miseEntry(map[string]any{"name": name, "version": "1.1.0", "installed": true})
+			if entry.Tool != name || entry.Version != "1.1.0" {
+				t.Fatalf("entry: %+v", entry)
+			}
+		})
 	}
-	if err := os.WriteFile(filepath.Join(bin, "codex"), []byte("#!/bin/sh\n"), 0755); err != nil {
-		t.Fatal(err)
+}
+
+func TestMiseMultipleInstalledVersions(t *testing.T) {
+	entries, err := parseMise([]byte(`{"npm:@openai/codex":[{"version":"0.155.1","installed":true,"active":false},{"version":"0.162.0","installed":true,"active":true}]}`))
+	if err != nil || len(entries) != 2 {
+		t.Fatalf("entries: %+v, %v", entries, err)
 	}
-	entry := miseEntry(map[string]any{"name": "npm:@openai/codex", "install_path": filepath.Dir(bin), "version": "0.42.0", "installed": true})
-	if entry.Command != "codex" || entry.Package != "npm:@openai/codex" {
-		t.Fatalf("entry: %+v", entry)
+	for _, entry := range entries {
+		if entry.Tool != "npm:@openai/codex" {
+			t.Fatalf("entry: %+v", entry)
+		}
 	}
 }
 
@@ -111,24 +69,30 @@ func TestManualVersion(t *testing.T) {
 	}
 }
 
-func TestNPMBins(t *testing.T) {
-	root := t.TempDir()
-	for pkg, bin := range map[string]any{"@openai/codex": map[string]string{"codex": "bin/codex.js"}, "typescript": map[string]string{"tsc": "bin/tsc", "tsserver": "bin/tsserver"}, "foo": "cli.js"} {
-		dir := filepath.Join(root, filepath.FromSlash(pkg))
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			t.Fatal(err)
-		}
-		data, _ := json.Marshal(map[string]any{"name": pkg, "bin": bin})
-		if err := os.WriteFile(filepath.Join(dir, "package.json"), data, 0644); err != nil {
-			t.Fatal(err)
-		}
+func TestManualToolName(t *testing.T) {
+	entries, err := (Manual{Tools: []config.ManualTool{
+		{Command: "first-command", Package: "tool-name"},
+		{Command: "fallback"},
+		{Command: "second-command", Package: "tool-name"},
+	}}).Collect(false)
+	if err != nil || len(entries) != 2 || entries[0].Tool != "tool-name" || entries[1].Tool != "fallback" {
+		t.Fatalf("entries: %+v, %v", entries, err)
 	}
-	for pkg, want := range map[string]int{"@openai/codex": 1, "typescript": 2, "foo": 1} {
-		if got := npmBins(root, pkg); len(got) != want {
-			t.Fatalf("%s: %v", pkg, got)
-		}
+}
+
+func TestNPMPackageNames(t *testing.T) {
+	entries, err := parseNPM([]byte(`{"dependencies":{"@example/tool":{"version":"1.2.3"},"library":{}}}`))
+	if err != nil || len(entries) != 2 {
+		t.Fatalf("entries: %+v, %v", entries, err)
 	}
-	if got := npmBins(root, "@openai/codex"); got[0] != "codex" {
-		t.Fatal(got)
+	versions := map[string]string{}
+	for _, e := range entries {
+		versions[e.Tool] = e.Version
+	}
+	if versions["@example/tool"] != "1.2.3" || versions["library"] != "unknown" {
+		t.Fatalf("versions: %+v", versions)
+	}
+	if _, err := parseNPM([]byte(`invalid`)); err == nil {
+		t.Fatal("expected parse error")
 	}
 }

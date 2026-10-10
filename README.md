@@ -1,6 +1,6 @@
 # cliv
 
-`cliv` lists CLI commands installed through multiple package managers in one read-only view.
+`cliv` lists tools and package versions installed through multiple package managers in one read-only view.
 
 ```sh
 cliv
@@ -9,10 +9,17 @@ cliv
 Default output:
 
 ```text
-COMMAND   VERSION   SOURCE
-rg        14.1.1    brew
-node      24.8.0    mise
-codex     0.42.0    npm
+brew
+TOOL      VERSION
+ripgrep   14.1.1
+
+mise
+TOOL   VERSION
+node      24.8.0
+
+npm
+TOOL            VERSION
+@openai/codex   0.42.0
 ```
 
 ## Install / run
@@ -33,18 +40,31 @@ with `cliv --version`; local source builds report `dev`.
 
 ```sh
 cliv --source brew   # filter by source
-cliv --all           # include dependency packages when supported
-cliv --json          # JSON output
+cliv --all           # include Homebrew dependency formulae
+cliv --json          # JSON output (ungrouped array)
 cliv --version       # cliv version
 cliv --help          # help
 ```
 
 ## Supported sources
 
-- Homebrew (`brew`): commands found in formula `bin`/`sbin`; direct formulae by default, with `--all` also including dependencies that provide executables.
-- mise (`mise`): installed tools from `mise ls --json`.
-- npm (`npm`): global top-level packages and their `package.json` `bin` commands.
-- manual: optional entries from `~/.config/cliv/config.toml`.
+- Homebrew (`brew`): installed formula names and versions; direct formulae by default, with `--all` also including dependencies. Formulae without executables are included.
+- mise (`mise`): installed tool IDs and versions from `mise ls --json`, including backend prefixes such as `npm:` and all installed versions. Executable discovery is not required.
+- npm (`npm`): global top-level package names and versions, including packages without executables.
+- manual: optional entries from `~/.config/cliv/config.toml`; displays `package`, falling back to `command` when unspecified.
+
+`cliv --json` outputs an array with `tool`, `version`, `source`, and `direct` fields. `tool` is the displayed tool/package name. `direct` distinguishes explicitly installed Homebrew formulae from dependencies; other sources report `true`. The former `command`, `package`, and `path` fields have been removed.
+
+```json
+[
+  {
+    "tool": "npm:@openai/codex",
+    "version": "0.162.0",
+    "source": "mise",
+    "direct": true
+  }
+]
+```
 
 ## Config
 

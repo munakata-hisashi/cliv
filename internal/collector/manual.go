@@ -22,6 +22,7 @@ func (Manual) Name() string { return "manual" }
 
 func (m Manual) Collect(all bool) ([]model.CLIEntry, error) {
 	var entries []model.CLIEntry
+	seen := make(map[[2]string]bool)
 	for _, t := range m.Tools {
 		if strings.TrimSpace(t.Command) == "" {
 			continue
@@ -37,7 +38,12 @@ func (m Manual) Collect(all bool) ([]model.CLIEntry, error) {
 		if t.VersionCommand != "" {
 			version = manualVersion(t.VersionCommand)
 		}
-		entries = append(entries, model.CLIEntry{Command: t.Command, Package: pkg, Version: version, Source: source, Path: commandPath(t.Command), Direct: true})
+		key := [2]string{pkg, version}
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		entries = append(entries, model.CLIEntry{Tool: pkg, Version: version, Source: source, Direct: true})
 	}
 	return entries, nil
 }

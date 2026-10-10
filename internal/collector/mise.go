@@ -1,12 +1,11 @@
 // miseが管理しているツールを集めます。
-// MVPでは1ツール1代表コマンドとして扱い、副次的なコマンドは追いません。
+// 実行ファイルの配置に依存せず、インストール済みツール名とバージョンを表示します。
 
 package collector
 
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/munakata-hisashi/cliv/internal/model"
@@ -61,7 +60,7 @@ func parseMise(data []byte) ([]model.CLIEntry, error) {
 	}
 	out := entries[:0]
 	for _, e := range entries {
-		if e.Command != "" {
+		if e.Tool != "" {
 			out = append(out, e)
 		}
 	}
@@ -73,16 +72,6 @@ func miseEntry(m map[string]any) model.CLIEntry {
 		return model.CLIEntry{}
 	}
 	name := stringField(m, "name", "tool", "plugin", "short")
-	command := name
-	if strings.Contains(name, ":") {
-		// Backend-qualified tool IDs are package IDs, not shell commands.
-		// Use the installed bin directory to pick one representative command.
-		bins := executableFiles(filepath.Join(stringField(m, "install_path"), "bin"))
-		if len(bins) == 0 {
-			return model.CLIEntry{}
-		}
-		command = bins[0]
-	}
 	version := stringField(m, "version", "installed_version")
 	if version == "" {
 		version = stringField(m, "requested_version")
@@ -95,7 +84,7 @@ func miseEntry(m map[string]any) model.CLIEntry {
 	if version == "" {
 		version = "unknown"
 	}
-	return model.CLIEntry{Command: command, Package: name, Version: version, Source: "mise", Path: commandPath(command), Direct: true}
+	return model.CLIEntry{Tool: name, Version: version, Source: "mise", Direct: true}
 }
 
 func versionString(s string) string {

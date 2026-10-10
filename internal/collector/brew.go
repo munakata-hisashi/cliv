@@ -3,8 +3,6 @@ package collector
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
-	"strings"
 
 	"github.com/munakata-hisashi/cliv/internal/model"
 )
@@ -33,14 +31,10 @@ func (Brew) Collect(all bool) ([]model.CLIEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	prefix, err := run("brew", "--prefix")
-	if err != nil {
-		return nil, err
-	}
-	return parseBrew(data, filepath.Clean(strings.TrimSpace(string(prefix))), all)
+	return parseBrew(data, all)
 }
 
-func parseBrew(data []byte, prefix string, all bool) ([]model.CLIEntry, error) {
+func parseBrew(data []byte, all bool) ([]model.CLIEntry, error) {
 	var info brewInfo
 	if err := json.Unmarshal(data, &info); err != nil {
 		return nil, fmt.Errorf("parse brew info: %w", err)
@@ -58,22 +52,10 @@ func parseBrew(data []byte, prefix string, all bool) ([]model.CLIEntry, error) {
 			if !all && !direct {
 				continue
 			}
-			// Inspect the keg itself so unlinked formulae are included. Formulae
-			// without an executable in bin or sbin do not provide a CLI entry.
-			keg := filepath.Join(prefix, "Cellar", f.Name, installed.Version)
-			seen := make(map[string]bool)
-			for _, dir := range []string{"bin", "sbin"} {
-				for _, command := range executableFiles(filepath.Join(keg, dir)) {
-					if seen[command] {
-						continue
-					}
-					seen[command] = true
-					entries = append(entries, model.CLIEntry{
-						Command: command, Package: f.Name, Version: firstNonEmpty(installed.Version),
-						Source: "brew", Path: commandPath(command), Direct: direct,
-					})
-				}
-			}
+			entries = append(entries, model.CLIEntry{
+				Tool: f.Name, Version: firstNonEmpty(installed.Version),
+				Source: "brew", Direct: direct,
+			})
 		}
 	}
 	return entries, nil

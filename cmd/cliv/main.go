@@ -114,8 +114,8 @@ func filterSource(entries []model.CLIEntry, source string) []model.CLIEntry {
 func sortEntries(entries []model.CLIEntry) {
 	sort.SliceStable(entries, func(i, j int) bool {
 		a, b := entries[i], entries[j]
-		if a.Command != b.Command {
-			return a.Command < b.Command
+		if a.Tool != b.Tool {
+			return a.Tool < b.Tool
 		}
 		if a.Source != b.Source {
 			return a.Source < b.Source
