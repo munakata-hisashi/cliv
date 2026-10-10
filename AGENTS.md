@@ -81,6 +81,7 @@ go run ./cmd/cliv --json
 ```
 
 - 収集率の計測は `scripts/check_collection.py --cliv <検証用バイナリ>`。期待一覧をネイティブ管理ツールから独立に取得し、`(source, tool, version)` で照合する。詳細は `docs/collection-metrics.md` を参照。
+- 実行時間は `scripts/measure_runtime.py --cliv <検証用バイナリ>` で計測。全体・ソース別に初回と繰り返しの中央値／最小／最大を分ける。失敗した実行を高速化とみなさない。詳細は `docs/runtime-metrics.md` を参照。
 - `python3 -m unittest discover -s scripts -p 'test_*.py'` で計測スクリプトも検証する。Go の期待一覧フィクスチャは `internal/collector/testdata/` にあり、パーサーから自動生成しない。
 - 実環境の証跡は `measurements/` など gitignore 対象に保存し、ユーザー固有の情報をコミットしない。
 - ユニットテストは実機の管理ツールやインストール構造に依存させず、JSON フィクスチャなどで解析・フィルタ・出力を確認する。

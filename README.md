@@ -103,6 +103,19 @@ The checker reports per-source coverage, missing/extra entries, and duplicates.
 See [collection metrics](docs/collection-metrics.md) for evidence capture, exit codes,
 and fixture tests.
 
+## Runtime metrics
+
+Measure the compiled binary's total and per-source wall-clock runtime:
+
+```sh
+go build -o /tmp/cliv-check ./cmd/cliv
+python3 scripts/measure_runtime.py --cliv /tmp/cliv-check
+```
+
+The first run is reported separately from the median/min/max of five subsequent runs.
+Use `--targets`, `--runs`, and `--output-dir` to customize measurement and save evidence.
+See [runtime metrics](docs/runtime-metrics.md) for methodology and comparison caveats.
+
 ## CI and releases
 
 GitHub Actions runs tests, vet and build checks on pushes to `main` and pull
