@@ -90,6 +90,19 @@ version_command = "claude --version"
 
 `cliv` is read-only and does not install, update, remove, or repair tools.
 
+## Collection metrics
+
+Build the binary to verify and compare its JSON inventory against native package-manager lists:
+
+```sh
+go build -o /tmp/cliv-check ./cmd/cliv
+python3 scripts/check_collection.py --cliv /tmp/cliv-check
+```
+
+The checker reports per-source coverage, missing/extra entries, and duplicates.
+See [collection metrics](docs/collection-metrics.md) for evidence capture, exit codes,
+and fixture tests.
+
 ## CI and releases
 
 GitHub Actions runs tests, vet and build checks on pushes to `main` and pull

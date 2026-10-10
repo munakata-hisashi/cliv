@@ -80,6 +80,9 @@ go run ./cmd/cliv --source mise
 go run ./cmd/cliv --json
 ```
 
+- 収集率の計測は `scripts/check_collection.py --cliv <検証用バイナリ>`。期待一覧をネイティブ管理ツールから独立に取得し、`(source, tool, version)` で照合する。詳細は `docs/collection-metrics.md` を参照。
+- `python3 -m unittest discover -s scripts -p 'test_*.py'` で計測スクリプトも検証する。Go の期待一覧フィクスチャは `internal/collector/testdata/` にあり、パーサーから自動生成しない。
+- 実環境の証跡は `measurements/` など gitignore 対象に保存し、ユーザー固有の情報をコミットしない。
 - ユニットテストは実機の管理ツールやインストール構造に依存させず、JSON フィクスチャなどで解析・フィルタ・出力を確認する。
 - 実行確認では、ソースから起動したものと PATH 上のインストール済み `cliv` を区別する。コード変更だけでは既存バイナリは更新されない。
 - インストールする場合は `command -v cliv` と `go env GOPATH GOBIN` で配置先を確認してから `go install ./cmd/cliv` を実行し、インストール済みコマンドでも確認する。
