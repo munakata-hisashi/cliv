@@ -3,6 +3,8 @@ package collector
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	"github.com/munakata-hisashi/cliv/internal/model"
 )
@@ -19,7 +21,8 @@ func (NPM) Collect(all bool) ([]model.CLIEntry, error) {
 	if err != nil && len(out) == 0 {
 		return nil, err
 	}
-	return parseNPM(out)
+	entries, parseErr := parseNPM(out)
+	return entries, errors.Join(err, parseErr)
 }
 
 func parseNPM(data []byte) ([]model.CLIEntry, error) {
@@ -27,6 +30,8 @@ func parseNPM(data []byte) ([]model.CLIEntry, error) {
 		Dependencies map[string]struct {
 			Version string `json:"version"`
 		} `json:"dependencies"`
+		Error    json.RawMessage `json:"error"`
+		Problems []string        `json:"problems"`
 	}
 	if err := json.Unmarshal(data, &list); err != nil {
 		return nil, err
@@ -37,6 +42,9 @@ func parseNPM(data []byte) ([]model.CLIEntry, error) {
 			Tool: pkg, Version: firstNonEmpty(dep.Version),
 			Source: "npm", Direct: true,
 		})
+	}
+	if (len(list.Error) > 0 && string(list.Error) != "null") || len(list.Problems) > 0 {
+		return entries, fmt.Errorf("npm reported inventory errors: error=%s problems=%v", list.Error, list.Problems)
 	}
 	return entries, nil
 }

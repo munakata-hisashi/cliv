@@ -4,6 +4,8 @@
 package collector
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,7 +28,12 @@ func commandPath(name string) string {
 
 func run(name string, args ...string) ([]byte, error) {
 	cmd := exec.Command(name, args...)
-	return cmd.Output()
+	out, err := cmd.Output()
+	var exit *exec.ExitError
+	if errors.As(err, &exit) && strings.TrimSpace(string(exit.Stderr)) != "" {
+		err = fmt.Errorf("%w: %s", err, strings.TrimSpace(string(exit.Stderr)))
+	}
+	return out, err
 }
 
 func executableFiles(dir string) []string {

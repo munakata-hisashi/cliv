@@ -6,8 +6,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"sort"
+	"strings"
 
 	"golang.org/x/term"
 
@@ -59,18 +61,24 @@ func main() {
 
 	// 設定で有効なcollectorだけを動かし、未導入のmanagerは静かに無視します。
 	cfg := config.Load()
-	collectors := enabledCollectors(cfg)
+	useColor := colorEnabled(color, term.IsTerminal(int(os.Stdout.Fd())), os.Getenv("NO_COLOR"), os.Getenv("TERM"))
+	os.Exit(listTools(os.Stdout, os.Stderr, enabledCollectors(cfg), source, all, jsonOut, useColor))
+}
+
+// Keep partial results, but make incomplete inventories detectable by scripts.
+func listTools(stdout, stderr io.Writer, collectors []collector.Collector, source string, all, jsonOut, useColor bool) int {
 	var entries []model.CLIEntry
+	var failed []string
 	for _, c := range collectors {
 		if source != "" && c.Name() != source {
 			continue
 		}
 		got, err := c.Collect(all)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", c.Name(), err)
-			continue
-		}
 		entries = append(entries, got...)
+		if err != nil {
+			fmt.Fprintf(stderr, "cliv: %s: %v\n", c.Name(), err)
+			failed = append(failed, c.Name())
+		}
 	}
 	if source != "" {
 		entries = filterSource(entries, source)
@@ -83,14 +91,21 @@ func main() {
 
 	var err error
 	if jsonOut {
-		err = output.JSON(os.Stdout, entries)
+		err = output.JSON(stdout, entries)
 	} else {
-		err = output.ColoredTable(os.Stdout, entries, colorEnabled(color, term.IsTerminal(int(os.Stdout.Fd())), os.Getenv("NO_COLOR"), os.Getenv("TERM")))
+		err = output.ColoredTable(stdout, entries, useColor)
+	}
+	if len(failed) > 0 {
+		fmt.Fprintf(stderr, "cliv: incomplete inventory: collection failed for %s\n", strings.Join(failed, ", "))
 	}
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		fmt.Fprintf(stderr, "cliv: output: %v\n", err)
+		return 1
 	}
+	if len(failed) > 0 {
+		return 1
+	}
+	return 0
 }
 
 func colorEnabled(mode string, terminal bool, noColor, termName string) bool {

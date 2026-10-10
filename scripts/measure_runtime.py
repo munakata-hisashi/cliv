@@ -30,7 +30,7 @@ def timed_run(command, timeout):
 def sample_error(sample):
     if sample["returncode"] != 0:
         return f"command failed (exit={sample['returncode']}): {sample['stderr'].strip()}"
-    # A collector failure can leave cliv with exit code zero and incomplete output.
+    # Older cliv binaries may exit zero after a collector failure.
     if sample["stderr"].strip():
         return f"cliv reported: {sample['stderr'].strip()}"
     return None

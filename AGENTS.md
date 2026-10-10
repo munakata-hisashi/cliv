@@ -25,6 +25,7 @@
 - 表のグルーピング／ソートで入力スライスを変更しない。JSON の並び順に影響させない。
 - `--json` はグルーピングしない配列。フィールドは `tool`・`version`・`source`・`direct`。
 - 旧 JSON フィールドの `command`・`package`・`path` は削除済み。実行ファイル用のフィールドを復活させない。
+- 収集失敗は部分結果を保持しつつ終了コード1。stderr にソース別エラーと `incomplete inventory` を明示する。JSON 配列にエラーを混ぜない。未導入・空一覧は正常終了、不正な引数は2。詳細と検証は `docs/failure-behavior.md` を参照。
 - `--source` は `brew`・`mise`・`npm`・`uv`・`manual` のいずれか。`--all` は現在 Homebrew の依存 formula を含めるための指定。
 
 ## ソースごとの収集方針
@@ -49,6 +50,7 @@
 
 - `npm list -g --depth=0 --json` のトップレベルパッケージ名とバージョンを使用する。
 - `package.json` の `bin` や `npm root -g` に依存しない。実行ファイルを持たないパッケージも表示する。
+- 非ゼロ終了や JSON の `error`／非空の `problems` は失敗として通知し、読み取れた部分結果は残す。
 - `direct` は true。
 
 ### uv
@@ -63,6 +65,7 @@
 - 設定の `package` を表示名とし、未指定なら `command` にフォールバックする。
 - 設定ファイルの `command`・`package`・`version_command` は引き続き有効。JSON フィールド変更と混同しない。
 - バージョンは `version_command` から取得する。同名・同バージョンの登録は重複排除する。
+- 設定されたバージョン取得の失敗・空出力・認識不能は `unknown` の行を保持してエラーを返す。未設定の `unknown` はエラーではない。
 - 設定の `source` にかかわらず収集結果は `manual` とする。他の管理元を装ったり、`--source` の選別を回避させない。
 - `direct` は true。
 

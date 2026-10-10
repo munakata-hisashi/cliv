@@ -64,8 +64,8 @@ func TestMiseMultipleInstalledVersions(t *testing.T) {
 }
 
 func TestManualVersion(t *testing.T) {
-	if got := manualVersion(`printf '2.1.63 (Claude Code)\n'`); got != "2.1.63" {
-		t.Fatalf("version = %q", got)
+	if got, err := manualVersion(`printf '2.1.63 (Claude Code)\n'`); got != "2.1.63" || err != nil {
+		t.Fatalf("version = %q, %v", got, err)
 	}
 }
 

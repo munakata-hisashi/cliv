@@ -136,7 +136,7 @@ def main():
             for name in ("native", "cliv"):
                 if record[name]["returncode"] != 0:
                     raise ValueError(f"{name} command failed: {record[name]['stderr'].strip()}")
-            # cliv can exit successfully after a collector failure; stderr is evidence.
+            # Older cliv binaries may exit zero after a collector failure.
             if record["cliv"]["stderr"].strip():
                 raise ValueError(f"cliv reported: {record['cliv']['stderr'].strip()}")
             expected = inventory(source, record["native"]["stdout"], args.all)

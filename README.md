@@ -90,6 +90,15 @@ version_command = "claude --version"
 
 `cliv` is read-only and does not install, update, remove, or repair tools.
 
+## Failure handling
+
+If collection fails, cliv keeps available results but exits with status `1` and
+reports the failed sources and an incomplete-inventory warning on stderr.
+JSON remains an array; check the exit code before treating it as a complete inventory.
+Missing package managers and empty inventories are not errors. Invalid arguments
+exit with status `2`. See [failure behavior](docs/failure-behavior.md) for details
+and safe shell usage.
+
 ## Collection metrics
 
 Build the binary to verify and compare its JSON inventory against native package-manager lists:
