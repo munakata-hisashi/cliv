@@ -22,7 +22,7 @@ func JSON(w io.Writer, entries []model.CLIEntry) error {
 func Table(w io.Writer, entries []model.CLIEntry) error {
 	// Keep the caller's ordering (used by JSON) intact.
 	grouped := append([]model.CLIEntry(nil), entries...)
-	order := map[string]int{"brew": 0, "mise": 1, "npm": 2, "manual": 3}
+	order := map[string]int{"brew": 0, "mise": 1, "npm": 2, "uv": 3, "manual": 4}
 	sort.SliceStable(grouped, func(i, j int) bool {
 		a, b := grouped[i], grouped[j]
 		ai, aKnown := order[a.Source]

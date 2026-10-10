@@ -11,19 +11,19 @@
 ## コードの構成
 
 - `cmd/cliv/main.go`：フラグ、collector の選択、フィルタリング、安定ソート、出力の呼び出し。
-- `internal/collector/`：brew・mise・npm・manual の情報収集と解析。
+- `internal/collector/`：brew・mise・npm・uv・manual の情報収集と解析。
 - `internal/model/entry.go`：共通の `CLIEntry`。
 - `internal/output/`：ソース別の表と JSON 出力。
 - `internal/config/config.go`：`~/.config/cliv/config.toml` の簡易ローダー。汎用 TOML パーサーではない。
 
 ## 表示とデータの仕様
 
-- デフォルトは `brew` → `mise` → `npm` → `manual` のセクションに分け、各セクションは `TOOL`・`VERSION` の2列。
+- デフォルトは `brew` → `mise` → `npm` → `uv` → `manual` のセクションに分け、各セクションは `TOOL`・`VERSION` の2列。
 - 各セクション内はツール名順。存在しないソースのセクションは表示しない。
 - 表のグルーピング／ソートで入力スライスを変更しない。JSON の並び順に影響させない。
 - `--json` はグルーピングしない配列。フィールドは `tool`・`version`・`source`・`direct`。
 - 旧 JSON フィールドの `command`・`package`・`path` は削除済み。実行ファイル用のフィールドを復活させない。
-- `--source` は `brew`・`mise`・`npm`・`manual` のいずれか。`--all` は現在 Homebrew の依存 formula を含めるための指定。
+- `--source` は `brew`・`mise`・`npm`・`uv`・`manual` のいずれか。`--all` は現在 Homebrew の依存 formula を含めるための指定。
 
 ## ソースごとの収集方針
 
@@ -48,6 +48,13 @@
 - `npm list -g --depth=0 --json` のトップレベルパッケージ名とバージョンを使用する。
 - `package.json` の `bin` や `npm root -g` に依存しない。実行ファイルを持たないパッケージも表示する。
 - `direct` は true。
+
+### uv
+
+- `uv tool list --color never` のツール名とバージョンを使用する。実行コマンドを示す `- ...` の行は表示対象にしない。
+- 現在はテキスト出力を解析している。フォーマット変更時はフィクスチャと解析処理を確認し、未知の形式を黙って誤表示しない。
+- `uv tool install` の対象のみ。仮想環境の `uv pip` パッケージや一時的な `uvx` 実行は含めない。
+- デフォルトで有効。設定の `[collectors] uv = false` で無効化できる。`direct` は true。
 
 ### manual
 

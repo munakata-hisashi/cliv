@@ -39,7 +39,7 @@ with `cliv --version`; local source builds report `dev`.
 ## Options
 
 ```sh
-cliv --source brew   # filter by source
+cliv --source brew   # filter by source (brew, mise, npm, uv, manual)
 cliv --all           # include Homebrew dependency formulae
 cliv --json          # JSON output (ungrouped array)
 cliv --version       # cliv version
@@ -51,6 +51,7 @@ cliv --help          # help
 - Homebrew (`brew`): installed formula names and versions; direct formulae by default, with `--all` also including dependencies. Formulae without executables are included.
 - mise (`mise`): installed tool IDs and versions from `mise ls --json`, including backend prefixes such as `npm:` and all installed versions. Executable discovery is not required.
 - npm (`npm`): global top-level package names and versions, including packages without executables.
+- uv (`uv`): tool names and versions installed with `uv tool install`, from `uv tool list`. Virtual-environment packages (`uv pip`) and temporary `uvx` executions are not included.
 - manual: optional entries from `~/.config/cliv/config.toml`; displays `package`, falling back to `command` when unspecified.
 
 `cliv --json` outputs an array with `tool`, `version`, `source`, and `direct` fields. `tool` is the displayed tool/package name. `direct` distinguishes explicitly installed Homebrew formulae from dependencies; other sources report `true`. The former `command`, `package`, and `path` fields have been removed.
@@ -73,6 +74,7 @@ cliv --help          # help
 brew = true
 mise = true
 npm = true
+uv = true
 
 [[tools]]
 command = "claude"

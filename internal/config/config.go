@@ -23,7 +23,7 @@ type ManualTool struct {
 }
 
 func Load() Config {
-	cfg := Config{Collectors: map[string]bool{"brew": true, "mise": true, "npm": true}}
+	cfg := Config{Collectors: map[string]bool{"brew": true, "mise": true, "npm": true, "uv": true}}
 	h, err := os.UserHomeDir()
 	if err != nil {
 		return cfg
