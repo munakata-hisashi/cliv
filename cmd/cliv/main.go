@@ -9,6 +9,8 @@ import (
 	"os"
 	"sort"
 
+	"golang.org/x/term"
+
 	"github.com/munakata-hisashi/cliv/internal/collector"
 	"github.com/munakata-hisashi/cliv/internal/config"
 	"github.com/munakata-hisashi/cliv/internal/model"
@@ -20,12 +22,14 @@ var version = "dev"
 
 func main() {
 	var source string
+	var color string
 	var all bool
 	var jsonOut bool
 	var showVersion bool
 
 	// MVPではサブコマンドを持たず、必要な操作だけをflagで受けます。
 	flag.StringVar(&source, "source", "", "filter by source (brew, mise, npm, uv, manual)")
+	flag.StringVar(&color, "color", "auto", "color output (auto, always, never)")
 	flag.BoolVar(&all, "all", false, "include dependency packages when supported")
 	flag.BoolVar(&jsonOut, "json", false, "output JSON")
 	flag.BoolVar(&showVersion, "version", false, "print cliv version")
@@ -45,6 +49,11 @@ func main() {
 	}
 	if source != "" && source != "brew" && source != "mise" && source != "npm" && source != "uv" && source != "manual" {
 		fmt.Fprintf(os.Stderr, "cliv: unknown source %q (brew, mise, npm, uv, manual)\n", source)
+		os.Exit(2)
+	}
+
+	if color != "auto" && color != "always" && color != "never" {
+		fmt.Fprintf(os.Stderr, "cliv: unknown color mode %q (auto, always, never)\n", color)
 		os.Exit(2)
 	}
 
@@ -76,12 +85,22 @@ func main() {
 	if jsonOut {
 		err = output.JSON(os.Stdout, entries)
 	} else {
-		err = output.Table(os.Stdout, entries)
+		err = output.ColoredTable(os.Stdout, entries, colorEnabled(color, term.IsTerminal(int(os.Stdout.Fd())), os.Getenv("NO_COLOR"), os.Getenv("TERM")))
 	}
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func colorEnabled(mode string, terminal bool, noColor, termName string) bool {
+	if mode == "always" {
+		return true
+	}
+	if mode == "never" {
+		return false
+	}
+	return terminal && noColor == "" && termName != "dumb"
 }
 
 func enabledCollectors(cfg config.Config) []collector.Collector {

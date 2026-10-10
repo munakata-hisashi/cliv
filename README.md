@@ -42,9 +42,14 @@ with `cliv --version`; local source builds report `dev`.
 cliv --source brew   # filter by source (brew, mise, npm, uv, manual)
 cliv --all           # include Homebrew dependency formulae
 cliv --json          # JSON output (ungrouped array)
+cliv --color always  # force colored headings (auto / always / never)
 cliv --version       # cliv version
 cliv --help          # help
 ```
+
+Headings are colored automatically when stdout is a terminal. Pipes and redirected
+output remain plain. A non-empty `NO_COLOR` or `TERM=dumb` disables automatic
+color; `--color always` overrides these settings. JSON is never colored.
 
 ## Supported sources
 
