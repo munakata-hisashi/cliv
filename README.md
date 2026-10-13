@@ -24,6 +24,28 @@ TOOL            VERSION
 
 ## Install / run
 
+### mise
+
+With mise installed:
+
+```sh
+mise use -g github:munakata-hisashi/cliv@0.2.0
+cliv --version
+```
+
+If mise is not activated in your shell, run:
+
+```sh
+mise exec github:munakata-hisashi/cliv@0.2.0 -- cliv --version
+```
+
+The GitHub backend downloads a prebuilt release; Go and a dedicated plugin are
+not required. Installation and activation were verified on macOS Apple Silicon
+with mise 2026.10.7 and cliv v0.2.0. Other release platforms have not yet been
+verified through mise. See [mise installation verification](docs/mise-install.md).
+
+### Go / release binaries
+
 ```sh
 go run ./cmd/cliv
 # or

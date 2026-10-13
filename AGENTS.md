@@ -101,6 +101,7 @@ go run ./cmd/cliv --json
 - ユニットテストは実機の管理ツールやインストール構造に依存させず、JSON フィクスチャなどで解析・フィルタ・出力を確認する。
 - 実行確認では、ソースから起動したものと PATH 上のインストール済み `cliv` を区別する。コード変更だけでは既存バイナリは更新されない。
 - インストールする場合は `command -v cliv` と `go env GOPATH GOBIN` で配置先を確認してから `go install ./cmd/cliv` を実行し、インストール済みコマンドでも確認する。
+- mise のインストール案内は `mise use -g github:munakata-hisashi/cliv@0.2.0`。macOS arm64 で GitHub バックエンドの自動選択と有効化を検証済み。再検証は HOME・mise の設定／データ／キャッシュを一時環境に分離する。手順と検証範囲は `docs/mise-install.md` を参照。
 - ローカルビルドの `cliv --version` は `dev`。リリース版は ldflags でタグのバージョンを埋め込む。
 - 表示・JSON・オプションの仕様を変更したら、関連テストと `README.md` も更新する。
 - ユーザーの実環境設定やインストール済みツールは、確認のために勝手に変更しない。
