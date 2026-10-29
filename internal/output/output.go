@@ -28,7 +28,7 @@ func Table(w io.Writer, entries []model.CLIEntry) error {
 func ColoredTable(w io.Writer, entries []model.CLIEntry, color bool) error {
 	// Keep the caller's ordering (used by JSON) intact.
 	grouped := append([]model.CLIEntry(nil), entries...)
-	order := map[string]int{"brew": 0, "mise": 1, "npm": 2, "uv": 3, "manual": 4}
+	order := map[string]int{"brew": 0, "mise": 1, "npm": 2, "uv": 3, "cargo": 4, "go": 5, "manual": 6}
 	sort.SliceStable(grouped, func(i, j int) bool {
 		a, b := grouped[i], grouped[j]
 		ai, aKnown := order[a.Source]
@@ -60,7 +60,7 @@ func ColoredTable(w io.Writer, entries []model.CLIEntry, color bool) error {
 		}
 		source := grouped[start].Source
 		if color {
-			codes := map[string]string{"brew": "33", "mise": "36", "npm": "31", "uv": "35", "manual": "32"}
+			codes := map[string]string{"brew": "33", "mise": "36", "npm": "31", "uv": "35", "cargo": "91", "go": "94", "manual": "32"}
 			code, ok := codes[source]
 			if !ok {
 				code = "37"

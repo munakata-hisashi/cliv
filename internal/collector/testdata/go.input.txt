@@ -1,0 +1,18 @@
+/home/user/go/bin/gopls: go1.23.2
+	path	golang.org/x/tools/gopls
+	mod	golang.org/x/tools/gopls	v0.16.2	h1:abc=
+	dep	golang.org/x/mod	v0.21.0	h1:def=
+	build	-buildmode=exe
+	build	GOOS=linux
+/home/user/go/bin/staticcheck: go1.23.2
+	path	honnef.co/go/tools/cmd/staticcheck
+	mod	honnef.co/go/tools	v0.5.1	h1:ghi=
+	dep	golang.org/x/tools	v0.24.0	h1:jkl=
+/home/user/go/bin/mytool: go1.23.2
+	path	example.com/mytool
+	mod	example.com/mytool	(devel)	
+	build	vcs=git
+/home/user/go/bin/replaced: go1.23.2
+	path	example.com/replaced/cmd/replaced
+	mod	example.com/replaced	v1.2.3
+	=>	../replaced	(devel)	
