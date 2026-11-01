@@ -39,3 +39,17 @@ func TestUVCollectorEnabled(t *testing.T) {
 		}
 	}
 }
+
+func TestCargoAndGoCollectorsEnabled(t *testing.T) {
+	for _, name := range []string{"cargo", "go"} {
+		for _, enabled := range []bool{false, true} {
+			collectors := enabledCollectors(config.Config{Collectors: map[string]bool{name: enabled}})
+			if enabled && (len(collectors) != 1 || collectors[0].Name() != name) {
+				t.Fatalf("%s enabled: %v", name, collectors)
+			}
+			if !enabled && len(collectors) != 0 {
+				t.Fatalf("%s disabled: %v", name, collectors)
+			}
+		}
+	}
+}

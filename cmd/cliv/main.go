@@ -30,7 +30,7 @@ func main() {
 	var showVersion bool
 
 	// MVPではサブコマンドを持たず、必要な操作だけをflagで受けます。
-	flag.StringVar(&source, "source", "", "filter by source (brew, mise, npm, uv, manual)")
+	flag.StringVar(&source, "source", "", "filter by source (brew, mise, npm, uv, cargo, go, manual)")
 	flag.StringVar(&color, "color", "auto", "color output (auto, always, never)")
 	flag.BoolVar(&all, "all", false, "include dependency packages when supported")
 	flag.BoolVar(&jsonOut, "json", false, "output JSON")
@@ -49,8 +49,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, "cliv: subcommands are not supported in MVP")
 		os.Exit(2)
 	}
-	if source != "" && source != "brew" && source != "mise" && source != "npm" && source != "uv" && source != "manual" {
-		fmt.Fprintf(os.Stderr, "cliv: unknown source %q (brew, mise, npm, uv, manual)\n", source)
+	if source != "" && source != "brew" && source != "mise" && source != "npm" && source != "uv" && source != "cargo" && source != "go" && source != "manual" {
+		fmt.Fprintf(os.Stderr, "cliv: unknown source %q (brew, mise, npm, uv, cargo, go, manual)\n", source)
 		os.Exit(2)
 	}
 
@@ -131,6 +131,12 @@ func enabledCollectors(cfg config.Config) []collector.Collector {
 	}
 	if cfg.Collectors["uv"] {
 		out = append(out, collector.UV{})
+	}
+	if cfg.Collectors["cargo"] {
+		out = append(out, collector.Cargo{})
+	}
+	if cfg.Collectors["go"] {
+		out = append(out, collector.Go{})
 	}
 	if len(cfg.Tools) > 0 {
 		out = append(out, collector.Manual{Tools: cfg.Tools})

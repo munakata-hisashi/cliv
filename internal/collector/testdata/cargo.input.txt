@@ -1,0 +1,11 @@
+cargo-edit v0.12.3:
+    cargo-add
+    cargo-rm
+    cargo-set-version
+    cargo-upgrade
+local-tool v0.1.0 (/home/user/src/local-tool):
+    local-tool
+ripgrep v14.1.1:
+    rg
+zellij v0.41.0-rc.1 (https://github.com/zellij-org/zellij?tag=v0.41.0-rc.1#abc1234):
+    zellij

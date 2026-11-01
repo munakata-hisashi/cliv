@@ -11,14 +11,14 @@
 ## コードの構成
 
 - `cmd/cliv/main.go`：フラグ、collector の選択、フィルタリング、安定ソート、出力の呼び出し。
-- `internal/collector/`：brew・mise・npm・uv・manual の情報収集と解析。
+- `internal/collector/`：brew・mise・npm・uv・cargo・go・manual の情報収集と解析。
 - `internal/model/entry.go`：共通の `CLIEntry`。
 - `internal/output/`：ソース別の表と JSON 出力。
 - `internal/config/config.go`：`~/.config/cliv/config.toml` の簡易ローダー。汎用 TOML パーサーではない。
 
 ## 表示とデータの仕様
 
-- デフォルトは `brew` → `mise` → `npm` → `uv` → `manual` のセクションに分け、各セクションは `TOOL`・`VERSION` の2列。
+- デフォルトは `brew` → `mise` → `npm` → `uv` → `cargo` → `go` → `manual` のセクションに分け、各セクションは `TOOL`・`VERSION` の2列。
 - 色は `--color auto|always|never` で制御。auto は stdout が端末の場合のみ有効で、非空の `NO_COLOR` または `TERM=dumb` で無効。always は環境変数より優先。JSON は常に無着色。
 - ANSI 色付けは列幅の計算後に行い、表の位置揃えを崩さない。
 - 各セクション内はツール名順。存在しないソースのセクションは表示しない。
@@ -26,7 +26,7 @@
 - `--json` はグルーピングしない配列。フィールドは `tool`・`version`・`source`・`direct`。
 - 旧 JSON フィールドの `command`・`package`・`path` は削除済み。実行ファイル用のフィールドを復活させない。
 - 収集失敗は部分結果を保持しつつ終了コード1。stderr にソース別エラーと `incomplete inventory` を明示する。JSON 配列にエラーを混ぜない。未導入・空一覧は正常終了、不正な引数は2。詳細と検証は `docs/failure-behavior.md` を参照。
-- `--source` は `brew`・`mise`・`npm`・`uv`・`manual` のいずれか。`--all` は現在 Homebrew の依存 formula を含めるための指定。
+- `--source` は `brew`・`mise`・`npm`・`uv`・`cargo`・`go`・`manual` のいずれか。`--all` は現在 Homebrew の依存 formula を含めるための指定。
 
 ## ソースごとの収集方針
 
@@ -59,6 +59,17 @@
 - 現在はテキスト出力を解析している。フォーマット変更時はフィクスチャと解析処理を確認し、未知の形式を黙って誤表示しない。
 - `uv tool install` の対象のみ。仮想環境の `uv pip` パッケージや一時的な `uvx` 実行は含めない。
 - デフォルトで有効。設定の `[collectors] uv = false` で無効化できる。`direct` は true。
+
+### cargo
+
+- `cargo install --list` のクレート名とバージョンを使用する。インデントされた実行ファイル行は表示しない。`~/.cargo/.crates2.json` は内部ファイルなので読まない。
+- デフォルトで有効。`[collectors] cargo = false` で無効化できる。`direct` は true。
+
+### go
+
+- `go env GOBIN GOPATH` で配置先（GOBIN、未設定なら GOPATH の先頭要素の `bin`）を決め、`go version -m <dir>` で一括取得する。Go 以外のファイルは無視される。
+- `tool` は `path`（`go install` に渡すメインパッケージパス）、`version` は `mod` 行のバージョン（`v` を除く、ローカルビルドは `(devel)`）。
+- デフォルトで有効。`[collectors] go = false` で無効化できる。`direct` は true。
 
 ### manual
 

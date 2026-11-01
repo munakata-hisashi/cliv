@@ -1,0 +1,6 @@
+[
+  {"tool": "golang.org/x/tools/gopls", "version": "0.16.2", "source": "go", "direct": true},
+  {"tool": "honnef.co/go/tools/cmd/staticcheck", "version": "0.5.1", "source": "go", "direct": true},
+  {"tool": "example.com/mytool", "version": "(devel)", "source": "go", "direct": true},
+  {"tool": "example.com/replaced/cmd/replaced", "version": "1.2.3", "source": "go", "direct": true}
+]

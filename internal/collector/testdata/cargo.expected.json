@@ -1,0 +1,6 @@
+[
+  {"tool": "cargo-edit", "version": "0.12.3", "source": "cargo", "direct": true},
+  {"tool": "local-tool", "version": "0.1.0", "source": "cargo", "direct": true},
+  {"tool": "ripgrep", "version": "14.1.1", "source": "cargo", "direct": true},
+  {"tool": "zellij", "version": "0.41.0-rc.1", "source": "cargo", "direct": true}
+]

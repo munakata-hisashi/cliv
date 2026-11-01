@@ -21,6 +21,8 @@ func TestCollectionFixtures(t *testing.T) {
 		{"mise", "mise.input.json", parseMise},
 		{"npm", "npm.input.json", parseNPM},
 		{"uv", "uv.input.txt", parseUV},
+		{"cargo", "cargo.input.txt", parseCargo},
+		{"go", "go.input.txt", parseGoVersion},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

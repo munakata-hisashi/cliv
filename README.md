@@ -39,7 +39,7 @@ with `cliv --version`; local source builds report `dev`.
 ## Options
 
 ```sh
-cliv --source brew   # filter by source (brew, mise, npm, uv, manual)
+cliv --source brew   # filter by source (brew, mise, npm, uv, cargo, go, manual)
 cliv --all           # include Homebrew dependency formulae
 cliv --json          # JSON output (ungrouped array)
 cliv --color always  # force colored headings (auto / always / never)
@@ -57,6 +57,8 @@ color; `--color always` overrides these settings. JSON is never colored.
 - mise (`mise`): installed tool IDs and versions from `mise ls --json`, including backend prefixes such as `npm:` and all installed versions. Executable discovery is not required.
 - npm (`npm`): global top-level package names and versions, including packages without executables.
 - uv (`uv`): tool names and versions installed with `uv tool install`, from `uv tool list`. Virtual-environment packages (`uv pip`) and temporary `uvx` executions are not included.
+- cargo (`cargo`): crate names and versions installed with `cargo install`, from `cargo install --list`. Executable names listed under each crate are not shown separately.
+- go (`go`): Go binaries installed with `go install` in `GOBIN` (or `$(go env GOPATH)/bin`, first entry). `tool` is the main package path passed to `go install` (e.g. `golang.org/x/tools/gopls`), and `version` is the module version from `go version -m`; local builds show `(devel)`. Non-Go files in the directory are ignored.
 - manual: optional entries from `~/.config/cliv/config.toml`; displays `package`, falling back to `command` when unspecified.
 
 `cliv --json` outputs an array with `tool`, `version`, `source`, and `direct` fields. `tool` is the displayed tool/package name. `direct` distinguishes explicitly installed Homebrew formulae from dependencies; other sources report `true`. The former `command`, `package`, and `path` fields have been removed.
@@ -80,6 +82,8 @@ brew = true
 mise = true
 npm = true
 uv = true
+cargo = true
+go = true
 
 [[tools]]
 command = "claude"
