@@ -1,17 +1,18 @@
-import unittest
 import json
+import os
+import unittest
 from pathlib import Path
 from collections import Counter
 
-from check_collection import actual_inventory, compare, inventory
+from check_collection import actual_inventory, compare, go_bin_dir, inventory
 
 
 class CollectionTests(unittest.TestCase):
     def test_reviewed_fixtures(self):
         fixtures = Path(__file__).resolve().parents[1] / "internal" / "collector" / "testdata"
-        for source, all_mode in [("brew", False), ("brew", True), ("mise", False), ("npm", False), ("uv", False)]:
+        for source, all_mode in [("brew", False), ("brew", True), ("mise", False), ("npm", False), ("uv", False), ("cargo", False), ("go", False)]:
             with self.subTest(source=source, all=all_mode):
-                extension = "txt" if source == "uv" else "json"
+                extension = "txt" if source in ("uv", "cargo", "go") else "json"
                 text = (fixtures / f"{source}.input.{extension}").read_text()
                 name = "brew-all" if all_mode else source
                 expected = json.loads((fixtures / f"{name}.expected.json").read_text())
@@ -50,6 +51,39 @@ class CollectionTests(unittest.TestCase):
         self.assertEqual(inventory("uv", "httpie v3.2.4\n- http\n- https\n"), {("uv", "httpie", "3.2.4")})
         with self.assertRaises(ValueError):
             inventory("uv", "unrecognized output")
+
+    def test_cargo(self):
+        text = "ripgrep v14.1.1:\n    rg\nlocal-tool v0.1.0 (/home/user/src/local-tool):\n    local-tool\n"
+        self.assertEqual(inventory("cargo", text), {("cargo", "ripgrep", "14.1.1"), ("cargo", "local-tool", "0.1.0")})
+        self.assertEqual(inventory("cargo", ""), set())
+        for line in ("ripgrep 14.1.1:", "ripgrep v14.1.1", "garbage"):
+            with self.assertRaises(ValueError):
+                inventory("cargo", line)
+
+    def test_go(self):
+        text = ("/home/user/go/bin/gopls: go1.23.2\n"
+                "\tpath\tgolang.org/x/tools/gopls\n"
+                "\tmod\tgolang.org/x/tools/gopls\tv0.16.2\th1:abc=\n"
+                "/home/user/go/bin/mytool: go1.23.2\n"
+                "\tpath\texample.com/mytool\n"
+                "\tmod\texample.com/mytool\t(devel)\n"
+                "/tmp/go: go1.23.2\n"
+                "\tpath\tcmd/go\n")
+        self.assertEqual(inventory("go", text), {
+            ("go", "golang.org/x/tools/gopls", "0.16.2"),
+            ("go", "example.com/mytool", "(devel)"),
+            ("go", "cmd/go", "unknown"),
+        })
+        self.assertEqual(inventory("go", ""), set())
+        for line in ("garbage", "\tpath\tx"):
+            with self.assertRaises(ValueError):
+                inventory("go", line)
+
+    def test_go_bin_dir(self):
+        sep = os.pathsep
+        self.assertEqual(go_bin_dir("/custom/bin\n/home/u/go\n"), "/custom/bin")
+        self.assertEqual(go_bin_dir("\n/home/u/go" + sep + "/other\n"), str(Path("/home/u/go") / "bin"))
+        self.assertEqual(go_bin_dir("\n\n"), "")
 
     def test_actual(self):
         self.assertEqual(actual_inventory("uv", '[{"tool":"httpie","version":"3","source":"uv"}]'), Counter({("uv", "httpie", "3"): 1}))

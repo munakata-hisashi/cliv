@@ -32,7 +32,7 @@ python3 scripts/check_collection.py --cliv /tmp/cliv-check \
 `--cliv` を必須とし、PATH 上の古いバイナリを誤って計測しないようにする。
 Windows ではビルド先を適宜 `.exe` のパスに変更する。
 
-デフォルトの対象は brew・mise・npm・uv。未導入の管理ツールは `SKIP` で計測から除外する。すべて SKIP の場合は計測不能。cliv 側の collector が設定で無効なら、ネイティブ一覧との欠落として現れる。計測対象は `~/.config/cliv/config.toml` で有効にするか、`--sources` で限定する。スクリプトは設定を変更しない。
+デフォルトの対象は brew・mise・npm・uv・cargo・go。未導入の管理ツールは `SKIP` で計測から除外する。すべて SKIP の場合は計測不能。cliv 側の collector が設定で無効なら、ネイティブ一覧との欠落として現れる。計測対象は `~/.config/cliv/config.toml` で有効にするか、`--sources` で限定する。スクリプトは設定を変更しない。
 
 期待一覧の基準：
 
@@ -42,6 +42,8 @@ Windows ではビルド先を適宜 `.exe` のパスに変更する。
 | mise | `mise ls --json`。`installed: false` を除外し、非アクティブな版も含む |
 | npm | `npm list -g --depth=0 --json`。トップレベルのパッケージ |
 | uv | `uv tool list --color never`。ツールの行のみ。コマンドを示す `- ...` の行は除外 |
+| cargo | `cargo install --list`。クレート名とバージョン。インデントされた実行ファイル行は除外 |
+| go | `go env GOBIN GOPATH` で配置先を決め、`go version -m <dir>` の path（パッケージパス）と mod のバージョン（先頭の `v` を除く）。配置先が無い場合は空一覧 |
 
 manual は任意のシェルコマンドでバージョンを取得するため、実環境の収集率計測から除外し、通常のユニットテストで確認する。
 
@@ -79,6 +81,6 @@ python3 -m unittest discover -s scripts -p 'test_*.py'
 
 `internal/collector/testdata/` にネイティブ出力と、人が確認した期待一覧を保存する。`fixture_test.go` が全件一致を検証する。期待一覧はパーサーの出力から自動生成しない。
 
-現在のフィクスチャは、brew の直接／依存 formula、mise のバックエンド ID と複数版／未インストール版、npm のパッケージ、uv の複数コマンドを持つツールを対象とする。空一覧・不正形式などは既存のユニットテストと Python のテストで補う。
+現在のフィクスチャは、brew の直接／依存 formula、mise のバックエンド ID と複数版／未インストール版、npm のパッケージ、uv の複数コマンドを持つツール、cargo のクレート（パス付きや pre-release を含む）、go のパッケージパス（`(devel)` や replace を含む）を対象とする。空一覧・不正形式などは既存のユニットテストと Python のテストで補う。
 
 CI は Go と Python の固定データテストを実行する。実環境照合は CI runner のインストール状態に依存するため、手元で必要時に実行する。

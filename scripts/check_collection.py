@@ -4,19 +4,53 @@ import argparse
 from collections import Counter
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 
-SOURCES = ("brew", "mise", "npm", "uv")
+SOURCES = ("brew", "mise", "npm", "uv", "cargo", "go")
 COMMANDS = {
     "brew": ["brew", "info", "--json=v2", "--installed"],
     "mise": ["mise", "ls", "--json"],
     "npm": ["npm", "list", "-g", "--depth=0", "--json"],
     "uv": ["uv", "tool", "list", "--color", "never"],
+    "cargo": ["cargo", "install", "--list"],
 }
+
+
+def go_bin_dir(env):
+    """GOBIN, or the first GOPATH entry's bin directory."""
+    lines = env.replace("\r", "").split("\n")
+    if lines and lines[0].strip():
+        return lines[0].strip()
+    if len(lines) > 1:
+        for path in lines[1].strip().split(os.pathsep):
+            if path:
+                return str(Path(path) / "bin")
+    return ""
+
+
+def version_command(source):
+    return [source, "version"] if source == "go" else [source, "--version"]
+
+
+def run_native(source, timeout):
+    """Fetch the native inventory. go needs GOBIN/GOPATH first."""
+    if source != "go":
+        return run(COMMANDS[source], timeout), {}
+    env = run(["go", "env", "GOBIN", "GOPATH"], timeout)
+    extra = {"go_env": env}
+    if env["returncode"] != 0:
+        return env, extra
+    directory = go_bin_dir(env["stdout"])
+    extra["go_bin_dir"] = directory
+    if not directory or not Path(directory).is_dir():
+        command = ["go", "version", "-m", directory] if directory else ["go", "env", "GOBIN", "GOPATH"]
+        return {"command": command, "returncode": 0, "stdout": "", "stderr": ""}, extra
+    return run(["go", "version", "-m", directory], timeout), extra
 
 
 def inventory(source, text, include_dependencies=False):
@@ -30,6 +64,50 @@ def inventory(source, text, include_dependencies=False):
             if not match:
                 raise ValueError(f"unexpected uv line: {line!r}")
             result.add((source, match[1], match[2]))
+        return result
+    if source == "cargo":
+        for raw in text.splitlines():
+            if not raw.strip() or raw[0] in " \t":
+                continue
+            line = raw.strip()
+            fields = line[:-1].split() if line.endswith(":") else []
+            version = fields[1][1:] if len(fields) >= 2 else ""
+            if version.endswith(":"):
+                version = version[:-1]
+            if (not line.endswith(":") or len(fields) < 2 or len(fields[1]) < 2
+                    or fields[1][0] != "v" or not fields[1][1].isdigit() or not version):
+                raise ValueError(f"unexpected cargo line: {raw!r}")
+            result.add((source, fields[0], version))
+        return result
+    if source == "go":
+        path = version = ""
+        in_binary = False
+
+        def flush():
+            nonlocal path, version, in_binary
+            if in_binary and path:
+                result.add((source, path, version.strip() or "unknown"))
+            path = version = ""
+            in_binary = False
+
+        for raw in text.splitlines():
+            raw = raw.rstrip("\r")
+            if not raw.strip():
+                continue
+            if raw[0] not in " \t":
+                flush()
+                if ": go" not in raw and ": devel" not in raw:
+                    raise ValueError(f"unexpected go version -m line: {raw!r}")
+                in_binary = True
+                continue
+            if not in_binary:
+                raise ValueError(f"unexpected go version -m line: {raw!r}")
+            fields = raw.split()
+            if len(fields) >= 2 and fields[0] == "path":
+                path = fields[1]
+            elif len(fields) >= 3 and fields[0] == "mod":
+                version = fields[2][1:] if fields[2].startswith("v") else fields[2]
+        flush()
         return result
     data = json.loads(text)
     if source == "brew":
@@ -126,8 +204,9 @@ def main():
             record["status"] = "SKIP"
             print(f"{source:<7} {'-':>8} {'-':>8} {'-':>8} {'-':>6} {'-':>11} {'N/A':>9}  SKIP (not installed)")
             continue
-        record["manager_version"] = run([source, "--version"], args.timeout)
-        record["native"] = run(COMMANDS[source], args.timeout)
+        record["manager_version"] = run(version_command(source), args.timeout)
+        record["native"], extra = run_native(source, args.timeout)
+        record.update(extra)
         command = [cliv, "--source", source, "--json"]
         if args.all:
             command.append("--all")
