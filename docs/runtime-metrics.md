@@ -5,7 +5,7 @@
 ビルド済み cliv のプロセス起動から終了までの経過時間（wall-clock time）を、Python の `time.perf_counter()` で計測する。
 
 - `total`：すべての有効な collector と表／JSON 出力を含む全体時間。
-- ソース別：`--source brew|mise|npm|uv|manual` の実行時間。collector 本体だけでなく、cliv の起動・設定読み込み・出力も含む。
+- ソース別：`--source brew|mise|npm|uv|cargo|go|manual` の実行時間。collector 本体だけでなく、cliv の起動・設定読み込み・出力も含む。
 - `FIRST`：各対象の初回実行時間。
 - `MEDIAN`・`MIN`・`MAX`：初回とは別に繰り返した実行の中央値・最小値・最大値。
 
@@ -23,7 +23,7 @@ python3 scripts/measure_runtime.py --cliv /tmp/cliv-check
 
 # 対象と繰り返し回数を限定
 python3 scripts/measure_runtime.py --cliv /tmp/cliv-check \
-  --targets total brew mise npm uv --runs 10
+  --targets total brew mise npm uv cargo go --runs 10
 
 # 証跡を保存（出力先は新規ディレクトリ）
 python3 scripts/measure_runtime.py --cliv /tmp/cliv-check \
@@ -61,7 +61,7 @@ python3 scripts/measure_runtime.py --cliv /tmp/cliv-check --json --all
 ## 比較時の注意
 
 - `FIRST` は「この計測での初回」であり、コールドキャッシュを保証しない。OS や管理ツールのキャッシュは消去しない。
-- 対象は指定順に実行する。デフォルトは total → brew → mise → npm → uv → manual。total の実行で後続ソースのキャッシュが温まる可能性がある。比較時は対象と順序をそろえる。
+- 対象は指定順に実行する。デフォルトは total → brew → mise → npm → uv → cargo → go → manual。total の実行で後続ソースのキャッシュが温まる可能性がある。比較時は対象と順序をそろえる。
 - 同じマシン・設定・インストール状態・出力形式・対象・回数で比較する。計測中のインストールや更新、重いバックグラウンド処理を避ける。
 - 環境変数や外部キャッシュの状態すべては保存しない。必要な条件は別途記録する。
 - ソース別時間の合計は全体時間と一致するとは限らない。ソース別ではプロセス起動などがそれぞれ発生する。

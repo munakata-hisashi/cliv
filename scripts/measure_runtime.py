@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 
-TARGETS = ("total", "brew", "mise", "npm", "uv", "manual")
+TARGETS = ("total", "brew", "mise", "npm", "uv", "cargo", "go", "manual")
 
 
 def timed_run(command, timeout):
@@ -132,8 +132,8 @@ def main():
     # Collect version metadata AFTER timed runs so --version does not warm up managers first.
     report["cliv_version"] = timed_run([cliv, "--version"], args.timeout)
     report["manager_versions"] = {
-        source: timed_run([source, "--version"], args.timeout)
-        for source in ("brew", "mise", "npm", "uv") if shutil.which(source)
+        source: timed_run(["go", "version"] if source == "go" else [source, "--version"], args.timeout)
+        for source in ("brew", "mise", "npm", "uv", "cargo", "go") if shutil.which(source)
     }
     report["exit_code"] = exit_code
     if args.output_dir:
